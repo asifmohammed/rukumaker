@@ -1,5 +1,7 @@
 package com.asif
 
+import groovy.xml.MarkupBuilder
+
 import java.nio.file.Files
 import java.nio.file.Paths
 
@@ -41,18 +43,54 @@ class RukuMaker {
     }
 
     void makeRukus() {
+        println "(Surah) (Ruku) (#ofAyaat): AyahAudio"
         for (int rukuNumber = 0; rukuNumber < rukus.size(); rukuNumber++) {
             List<String> ayaFiles = this.ayaFiles(rukuNumber)
-            println "${threeDigitNumber(rukuNumber + 1)} (${threeDigitNumber(ayaFiles.size())}): $ayaFiles"
+            def fullLinks = ayaFiles.collect { "http://everyayah.com/data/Husary_128kbps/" + it }
+            def surahNumber = ayaFiles[0].substring(0, 3) as int
+            println "(Surah ${suraNameMap.get(surahNumber)}) (${threeDigitNumber(rukuNumber + 1)}) (${threeDigitNumber(ayaFiles.size())}): $fullLinks"
             //moveFiles(rukuNumber, ayaFiles)
         }
     }
+
+    void makeRukusHtml() {
+        def writer = new StringWriter()
+        def builder = new MarkupBuilder(writer)
+        builder.html {
+            head {
+                title "Ruku Files"
+            }
+            body {
+                h1 "Ruku Files"
+                p ""
+
+                // an element with attributes and text content /
+
+                // mixed content /
+                for (int rukuNumber = 0; rukuNumber < rukus.size(); rukuNumber++) {
+                    p() {
+                        List<String> ayaFiles = this.ayaFiles(rukuNumber)
+                        def surahNumber = ayaFiles[0].substring(0, 3) as int
+                        h2 "Surah ${suraNameMap.get(surahNumber)} Ruku: ${threeDigitNumber(rukuNumber + 1)}  #aya: ${threeDigitNumber(ayaFiles.size())}"
+                        def fullLinks = ayaFiles.collect { "http://everyayah.com/data/Husary_128kbps/" + it }
+
+                        fullLinks.each {
+                            a(href: it)
+                        }
+                    }
+                }
+
+            }
+        }
+        println writer
+    }
+
 
     private List<String> ayaFiles(int rukuNumber) {
         def ruku = rukus[rukuNumber].attributes()
         def surahNumber = suraNumber(ruku)
         def startAyaNumber = this.startAyaNumber(ruku) as int
-        def endAyaNumber = this.endAyaNumber(rukus[rukuNumber + 1].attributes()) as int
+        def endAyaNumber = rukuNumber == 555 ? 6 : this.endAyaNumber(rukus[rukuNumber + 1].attributes()) as int
 
         def files = (startAyaNumber..endAyaNumber).collect() {
             threeDigitNumber(surahNumber) + threeDigitNumber(it) + ".mp3"
@@ -76,4 +114,4 @@ class RukuMaker {
     }
 }
 
-new RukuMaker().makeRukus()
+new RukuMaker().makeRukusHtml()
