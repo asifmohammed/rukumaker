@@ -53,7 +53,7 @@ class RukuMaker {
         }
     }
 
-    void makeRukusHtml() {
+    void makeRukusHtml(String qariUrl) {
         def writer = new StringWriter()
         def builder = new MarkupBuilder(writer)
         builder.html {
@@ -72,7 +72,7 @@ class RukuMaker {
                         List<String> ayaFiles = this.ayaFiles(rukuNumber)
                         def surahNumber = ayaFiles[0].substring(0, 3) as int
                         h2 "Surah ${suraNameMap.get(surahNumber)} Ruku: ${threeDigitNumber(rukuNumber + 1)}  #aya: ${threeDigitNumber(ayaFiles.size())}"
-                        def fullLinks = ayaFiles.collect { "http://everyayah.com/data/Husary_128kbps/" + it }
+                        def fullLinks = ayaFiles.collect { qariUrl + it }
 
                         fullLinks.each {
                             a(href: it)
@@ -114,4 +114,4 @@ class RukuMaker {
     }
 }
 
-new RukuMaker().makeRukusHtml()
+new RukuMaker().makeRukusHtml("http://everyayah.com/data/Husary_128kbps/")
