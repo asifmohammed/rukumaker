@@ -54,35 +54,42 @@ class RukuMaker {
     }
 
     void makeRukusHtml(String qariUrl) {
-        def writer = new StringWriter()
-        def builder = new MarkupBuilder(writer)
-        builder.html {
-            head {
-                title "Ruku Files"
-            }
-            body {
-                h1 "Ruku Files"
-                p ""
-
-                // an element with attributes and text content /
-
-                // mixed content /
-                for (int rukuNumber = 0; rukuNumber < rukus.size(); rukuNumber++) {
+        for (int rukuNumber = 0; rukuNumber < rukus.size(); rukuNumber++) {
+            def writer = new StringWriter()
+            def builder = new MarkupBuilder(writer)
+            builder.html {
+                List<String> ayaFiles = this.ayaFiles(rukuNumber)
+                def surahNumber = ayaFiles[0].substring(0, 3) as int
+                def heading = "Surah ${suraNameMap.get(surahNumber)} Ruku# ${threeDigitNumber(rukuNumber + 1)} with # of ayas (${threeDigitNumber(ayaFiles.size())})"
+                def fullLinks = ayaFiles.collect { qariUrl + it }
+                head {
+                    title "Ruku Files for : $heading"
+                }
+                body {
+                    h1 "Ruku Files for : $heading"
+                    p ""
                     p() {
-                        List<String> ayaFiles = this.ayaFiles(rukuNumber)
-                        def surahNumber = ayaFiles[0].substring(0, 3) as int
-                        h2 "Surah ${suraNameMap.get(surahNumber)} Ruku: ${threeDigitNumber(rukuNumber + 1)}  #aya: ${threeDigitNumber(ayaFiles.size())}"
-                        def fullLinks = ayaFiles.collect { qariUrl + it }
+                        ul {
+                            for (String link : fullLinks) {
+                                li {
+                                    p() {
+                                        label(link.split("/").last())
+                                        br()
+                                        audio(controls: "") {
+                                            source(src: link, type: "audio/mp3")
+                                        }
+                                    }
 
-                        fullLinks.each {
-                            a(href: it)
+                                }
+                            }
                         }
+
                     }
                 }
 
             }
+            new File("ruku$rukuNumber" + ".html").write(writer.toString())
         }
-        println writer
     }
 
 
