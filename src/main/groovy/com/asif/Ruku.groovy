@@ -60,6 +60,12 @@ class RukuMaker {
             builder.html {
                 List<String> ayaFiles = this.ayaFiles(rukuNumber)
                 def surahNumber = ayaFiles[0].substring(0, 3) as int
+                if (rukuNumber < 555) {
+                    def firstAyahNextRuku = this.ayaFiles(rukuNumber + 1).first()
+                    def surahNumberNextRuku = firstAyahNextRuku.substring(0, 3) as int
+                    if (surahNumber == surahNumberNextRuku)
+                        ayaFiles << firstAyahNextRuku
+                }
                 def heading = "Surah ${suraNameMap.get(surahNumber)} Ruku# ${threeDigitNumber(rukuNumber + 1)} with # of ayas (${threeDigitNumber(ayaFiles.size())})"
                 def fullLinks = ayaFiles.collect { qariUrl + it }
                 head {
@@ -69,7 +75,7 @@ class RukuMaker {
                     h1 "Ruku Files for : $heading"
                     p ""
                     p() {
-                        ul {
+                        ol {
                             for (String link : fullLinks) {
                                 li {
                                     p() {
@@ -90,6 +96,40 @@ class RukuMaker {
             }
             new File("ruku$rukuNumber" + ".html").write(writer.toString())
         }
+    }
+
+    void makeRukusShell(String qariUrl) {
+        def outputDir = new File("/Users/amohammed3/DevEnv/source/rukumaker/src/main/groovy/com/asif/shellFiles/")
+        outputDir.deleteDir()
+        outputDir.mkdirs()
+        for (int rukuNumber = 0; rukuNumber < rukus.size(); rukuNumber++) {
+            List<String> ayaFiles = this.ayaFiles(rukuNumber)
+            def surahNumber = ayaFiles[0].substring(0, 3) as int
+            if (rukuNumber < 555) {
+                def firstAyahNextRuku = this.ayaFiles(rukuNumber + 1).first()
+                def surahNumberNextRuku = firstAyahNextRuku.substring(0, 3) as int
+                if (surahNumber == surahNumberNextRuku)
+                    ayaFiles << firstAyahNextRuku
+            }
+            def fullLinks = ayaFiles.collect { qariUrl + it }
+
+            String shellText = shellText(rukuNumber, fullLinks)
+
+            new File(outputDir.getAbsolutePath() + "/ruku${threeDigitNumber(rukuNumber)}.sh").write(shellText)
+        }
+    }
+
+    private String shellText(int rukuNumber, List<String> fullLinks) {
+        def shellText = '#!/bin/bash\n\n'
+        fullLinks.each {
+            shellText = shellText + "curl -O $it\n"
+        }
+        shellText = shellText + "\ncat "
+        fullLinks.each {
+            shellText = shellText + it.split("/").last() + " "
+        }
+        shellText = shellText + "> ruku${threeDigitNumber(rukuNumber)}.mp3"
+        shellText
     }
 
 
@@ -121,4 +161,4 @@ class RukuMaker {
     }
 }
 
-new RukuMaker().makeRukusHtml("http://everyayah.com/data/Husary_128kbps/")
+new RukuMaker().makeRukusShell("http://everyayah.com/data/Husary_128kbps/")
