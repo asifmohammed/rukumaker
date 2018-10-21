@@ -99,36 +99,66 @@ class RukuMaker {
     }
 
     void makeRukusShell(String qariUrl) {
-        def outputDir = new File("/Users/amohammed3/DevEnv/source/rukumaker/src/main/groovy/com/asif/shellFiles/")
+        def outputDir = new File("${System.getProperty("user.dir")}/shellFiles/")
         outputDir.deleteDir()
         outputDir.mkdirs()
         for (int rukuNumber = 0; rukuNumber < rukus.size(); rukuNumber++) {
-            List<String> ayaFiles = this.ayaFiles(rukuNumber)
-            def surahNumber = ayaFiles[0].substring(0, 3) as int
-            if (rukuNumber < 555) {
-                def firstAyahNextRuku = this.ayaFiles(rukuNumber + 1).first()
-                def surahNumberNextRuku = firstAyahNextRuku.substring(0, 3) as int
-                if (surahNumber == surahNumberNextRuku)
-                    ayaFiles << firstAyahNextRuku
+            List<String> fullLinks = fullAyahLinks(rukuNumber, qariUrl)
+            if (fullLinks.size() > 0) {
+                String shellText = shellText(rukuNumber, fullLinks)
+                new File(outputDir.getAbsolutePath() + "/ruku${threeDigitNumber(rukuNumber + 1)}.sh").write(shellText)
             }
-            def fullLinks = ayaFiles.collect { qariUrl + it }
-
-            String shellText = shellText(rukuNumber, fullLinks)
-
-            new File(outputDir.getAbsolutePath() + "/ruku${threeDigitNumber(rukuNumber)}.sh").write(shellText)
         }
+    }
+
+    void makeRukusShellBig(String qariUrl) {
+        def outputDir = new File("${System.getProperty("user.dir")}/shellFiles/")
+        outputDir.deleteDir()
+        outputDir.mkdirs()
+        def shellTextString = '#!/bin/bash\n\n'
+        for (int rukuNumber = 0; rukuNumber < rukus.size(); rukuNumber++) {
+            List<String> fullLinks = fullAyahLinks(rukuNumber, qariUrl)
+            if (fullLinks.size() > 0) {
+                 shellTextString = shellTextString + shellText(rukuNumber, fullLinks)
+            }
+        }
+        new File(outputDir.getAbsolutePath() + "/rukus_qari${qariUrl.split("/").last()}.sh").write(shellTextString)
+
+    }
+
+    private List<String> fullAyahLinks(int rukuNumber, String qariUrl) {
+        List<String> ayaFiles = this.ayaFiles(rukuNumber)
+        def surahNumber = ayaFiles[0].substring(0, 3) as int
+        if (rukuNumber < 555) {
+            def firstAyahNextRuku = this.ayaFiles(rukuNumber + 1).first()
+            def surahNumberNextRuku = firstAyahNextRuku.substring(0, 3) as int
+            if (surahNumber == surahNumberNextRuku)
+                ayaFiles << firstAyahNextRuku
+        }
+        def fullLinks = ayaFiles.collect { qariUrl + it }
+        fullLinks
     }
 
     private String shellText(int rukuNumber, List<String> fullLinks) {
         def shellText = '#!/bin/bash\n\n'
         fullLinks.each {
-            shellText = shellText + "curl -O $it\n"
+            shellText = shellText + "curl -O \$1/${it.split("/").last()}\n"
         }
         shellText = shellText + "\ncat "
+        def firstAyah = fullLinks.first().split("/").last().split("\\.")[0].reverse().take(3).reverse()
+        def surah = fullLinks.first().split("/").last().split("\\.")[0].take(3)
+        def lastAyahLink = fullLinks.size() > 1 ? fullLinks.take(fullLinks.size() - 1).last() : fullLinks.first()
+        def lastAyah = lastAyahLink.split("/").last().split("\\.")[0].reverse().take(3).reverse()
         fullLinks.each {
             shellText = shellText + it.split("/").last() + " "
         }
-        shellText = shellText + "> ruku${threeDigitNumber(rukuNumber)}.mp3"
+        shellText = shellText + "> ruku#${threeDigitNumber(rukuNumber + 1)}_${surah}_${firstAyah}-${lastAyah}.mp3\n\n"
+
+        fullLinks.each {
+            shellText = shellText + "rm -rf  ${it.split("/").last()}\n"
+        }
+
+        println "shellText = $shellText"
         shellText
     }
 
@@ -161,4 +191,4 @@ class RukuMaker {
     }
 }
 
-new RukuMaker().makeRukusShell("http://everyayah.com/data/Husary_128kbps/")
+new RukuMaker().makeRukusShellBig("http://everyayah.com/data/Husary_128kbps/")
