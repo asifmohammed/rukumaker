@@ -7,6 +7,8 @@ class RukuMaker {
     def rukus = new XmlParser().parse(xmlFile).rukus[0].value()
     def suras = new XmlParser().parse(xmlFile).suras[0].value()
 
+    def rukusBySuraMap = rukus.groupBy { it -> it.attributes().get('sura') }
+
     def suraNumberOfAyasMap = suras.collectEntries {
         [(it.attributes().get("index") as int): it.attributes().get("ayas") as int]
     }
@@ -43,6 +45,13 @@ class RukuMaker {
         outputDir.mkdirs()
         String shellText = createShellScript(beginRukuNumber, endRukuNumber)
         new File(outputDir.getAbsolutePath() + "/rukus.sh").write(shellText)
+    }
+
+    void makeRukusShellScript(def surahNumber) {
+        println "Creating shell script for surah#$surahNumber ${suraNameMap.get(surahNumber)}"
+        def rukus = rukusBySuraMap.get(surahNumber as String)
+        def rukuNos = rukus.collect { it.attributes().get('index') as Integer }
+        makeRukusShellScript(rukuNos.min(), rukuNos.max())
     }
 
     private String createShellScript(int beginRukuNumber, int endRukuNumber) {
@@ -112,4 +121,5 @@ class RukuMaker {
     }
 }
 
-new RukuMaker().makeRukusShellScript(1, 3)
+//new RukuMaker().makeRukusShellScript(1, 3)
+new RukuMaker().makeRukusShellScript(59)
