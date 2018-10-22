@@ -65,7 +65,7 @@ class RukuMaker {
                 }
             }
         }
-        shellTextString + "\nend=`date +%s`\nruntime=\${end-start}/60\necho \${runtime} seconds"
+        shellTextString + "\nend=`date +%s`\n"
     }
 
     private def rukuAyahsPlusOne(int rukuNumber) {
