@@ -1,6 +1,7 @@
 package com.asif
 
 class RukuMaker {
+
     ClassLoader classLoader = getClass().getClassLoader()
     File xmlFile = new File(classLoader.getResource("quran-data.xml").getFile())
     def rukus = new XmlParser().parse(xmlFile).rukus[0].value()
@@ -35,11 +36,16 @@ class RukuMaker {
         String.format("%03d", number)
     }
 
-    void makeRukusShellBig(int beginRukuNumber, int endRukuNumber) {
-
+    void makeRukusShellScript(int beginRukuNumber, int endRukuNumber) {
+        println "Creating shell script from ruku#$beginRukuNumber to ruku#$endRukuNumber"
         def outputDir = new File("${System.getProperty("user.dir")}/shellFiles/")
         outputDir.deleteDir()
         outputDir.mkdirs()
+        String shellText = createShellScript(beginRukuNumber, endRukuNumber)
+        new File(outputDir.getAbsolutePath() + "/rukus.sh").write(shellText)
+    }
+
+    private String createShellScript(int beginRukuNumber, int endRukuNumber) {
         def shellTextString = "#!/bin/bash\n\nmkdir -p \$2\n\nstart=`date +%s` \n\n"
         def end = endRukuNumber >= 556 ? 556 : endRukuNumber
         if (beginRukuNumber < endRukuNumber) {
@@ -50,9 +56,7 @@ class RukuMaker {
                 }
             }
         }
-        shellTextString = shellTextString + "\nend=`date +%s`\nruntime=\${end-start}/60\necho \${runtime} seconds"
-        new File(outputDir.getAbsolutePath() + "/rukus.sh").write(shellTextString)
-
+        shellTextString + "\nend=`date +%s`\nruntime=\${end-start}/60\necho \${runtime} seconds"
     }
 
     private def rukuAyahsPlusOne(int rukuNumber) {
@@ -67,7 +71,7 @@ class RukuMaker {
             else
                 isFullSurahInRuku = true
         }
-        def fullLinks = ayaFiles.collect {  it }
+        def fullLinks = ayaFiles.collect { it }
 
         [fullLinks, isFullSurahInRuku]
     }
@@ -108,4 +112,4 @@ class RukuMaker {
     }
 }
 
-new RukuMaker().makeRukusShellBig(1, 3)
+new RukuMaker().makeRukusShellScript(1, 3)
