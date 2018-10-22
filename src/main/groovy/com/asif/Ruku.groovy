@@ -3,7 +3,6 @@ package com.asif
 class RukuMaker {
     ClassLoader classLoader = getClass().getClassLoader()
     File xmlFile = new File(classLoader.getResource("quran-data.xml").getFile())
-    def mp3Dir = "/Users/asifmohammed/Quran/Hifdh/MinshawyMujawwad/"
     def rukus = new XmlParser().parse(xmlFile).rukus[0].value()
     def suras = new XmlParser().parse(xmlFile).suras[0].value()
 
@@ -36,7 +35,7 @@ class RukuMaker {
         String.format("%03d", number)
     }
 
-    void makeRukusShellBig(String qariUrl, int beginRukuNumber, int endRukuNumber) {
+    void makeRukusShellBig(int beginRukuNumber, int endRukuNumber) {
 
         def outputDir = new File("${System.getProperty("user.dir")}/shellFiles/")
         outputDir.deleteDir()
@@ -45,18 +44,18 @@ class RukuMaker {
         def end = endRukuNumber >= 556 ? 556 : endRukuNumber
         if (beginRukuNumber < endRukuNumber) {
             for (int rukuNumber = beginRukuNumber - 1; rukuNumber < end; rukuNumber++) {
-                def (fullLinks, isFullSurahInRuku) = fullAyahLinks(rukuNumber, qariUrl)
+                def (fullLinks, isFullSurahInRuku) = rukuAyahsPlusOne(rukuNumber)
                 if (fullLinks.size() > 0) {
                     shellTextString = shellTextString + shellText(rukuNumber, fullLinks, isFullSurahInRuku) + "\necho Ruku#${rukuNumber + 1} complete\n\n"
                 }
             }
         }
         shellTextString = shellTextString + "\nend=`date +%s`\nruntime=\${end-start}/60\necho \${runtime} seconds"
-        new File(outputDir.getAbsolutePath() + "/rukus_qari${qariUrl.split("/").last()}.sh").write(shellTextString)
+        new File(outputDir.getAbsolutePath() + "/rukus.sh").write(shellTextString)
 
     }
 
-    private def fullAyahLinks(int rukuNumber, String qariUrl) {
+    private def rukuAyahsPlusOne(int rukuNumber) {
         boolean isFullSurahInRuku = false
         List<String> ayaFiles = this.ayaFiles(rukuNumber)
         def surahNumber = ayaFiles[0].substring(0, 3) as int
@@ -68,7 +67,7 @@ class RukuMaker {
             else
                 isFullSurahInRuku = true
         }
-        def fullLinks = ayaFiles.collect { qariUrl + it }
+        def fullLinks = ayaFiles.collect {  it }
 
         [fullLinks, isFullSurahInRuku]
     }
@@ -96,7 +95,6 @@ class RukuMaker {
         shellText
     }
 
-
     private List<String> ayaFiles(int rukuNumber) {
         def ruku = rukus[rukuNumber].attributes()
         def surahNumber = suraNumber(ruku)
@@ -110,4 +108,4 @@ class RukuMaker {
     }
 }
 
-new RukuMaker().makeRukusShellBig("http://everyayah.com/data/Husary_128kbps/", 114, 2)
+new RukuMaker().makeRukusShellBig(1, 3)
